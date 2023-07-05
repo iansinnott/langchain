@@ -1,6 +1,7 @@
 """VectorStore wrapper around a Postgres/PGVector database."""
 from __future__ import annotations
 
+import os
 import enum
 import logging
 import uuid
@@ -19,7 +20,7 @@ from langchain.vectorstores.base import VectorStore
 Base = declarative_base()  # type: Any
 
 
-PGVECTOR_VECTOR_SIZE = 1536
+PGVECTOR_VECTOR_SIZE = os.environ.get("PGVECTOR_VECTOR_SIZE", default=1536)
 _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
 
 
