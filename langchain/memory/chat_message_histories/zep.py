@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from langchain.schema import (
-    AIMessage,
     BaseChatMessageHistory,
-    BaseMessage,
-    HumanMessage,
 )
+from langchain.schema.messages import AIMessage, BaseMessage, HumanMessage
 
 if TYPE_CHECKING:
-    from zep_python import Memory, Message, NotFoundError, SearchResult
+    from zep_python import Memory, MemorySearchResult, Message, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +23,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         zep_chat_history = ZepChatMessageHistory(
             session_id=session_id,
             url=ZEP_API_URL,
+            api_key=<your_api_key>,
         )
 
         # Use a standard ConversationBufferMemory to encapsulate the Zep chat history
@@ -37,7 +36,8 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
     summarizes, embeds, indexes, and enriches conversational AI chat
     histories, and exposes them via simple, low-latency APIs.
 
-    For server installation instructions and more, see: https://getzep.github.io/
+    For server installation instructions and more, see:
+    https://docs.getzep.com/deployment/quickstart/
 
     This class is a thin wrapper around the zep-python package. Additional
     Zep functionality is exposed via the `zep_summary` and `zep_messages`
@@ -51,6 +51,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         self,
         session_id: str,
         url: str = "http://localhost:8000",
+        api_key: Optional[str] = None,
     ) -> None:
         try:
             from zep_python import ZepClient
@@ -60,7 +61,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
                 "Please install it with `pip install zep-python`."
             )
 
-        self.zep_client = ZepClient(base_url=url)
+        self.zep_client = ZepClient(base_url=url, api_key=api_key)
         self.session_id = session_id
 
     @property
@@ -130,11 +131,15 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
         self.zep_client.add_memory(self.session_id, zep_memory)
 
-    def search(self, query: str, limit: Optional[int] = None) -> List[SearchResult]:
+    def search(
+        self, query: str, metadata: Optional[Dict] = None, limit: Optional[int] = None
+    ) -> List[MemorySearchResult]:
         """Search Zep memory for messages matching the query"""
-        from zep_python import SearchPayload
+        from zep_python import MemorySearchPayload
 
-        payload: SearchPayload = SearchPayload(text=query)
+        payload: MemorySearchPayload = MemorySearchPayload(
+            text=query, metadata=metadata
+        )
 
         return self.zep_client.search_memory(self.session_id, payload, limit=limit)
 
